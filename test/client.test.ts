@@ -106,9 +106,48 @@ describe("Sg24Client", () => {
     );
   });
 
-  it("rejects a non-array response", async () => {
-    const f = fakeFetch({ body: { code: 220, message: "auth" } });
+  it("rejects a non-array response without a code", async () => {
+    const f = fakeFetch({ body: { foo: 1 } });
     await expect(client(f.fn).batch([{ command: "a" }])).rejects.toThrow(/Unexpected API response/);
+  });
+
+  it("surfaces a top-level auth error with a token hint", async () => {
+    const f = fakeFetch({ body: { code: 220, message: "Authentication failed" } });
+    const err = await client(f.fn).batch([{ command: "a" }]).catch((e) => e);
+    expect(err).toBeInstanceOf(Sg24ApiError);
+    expect(err.code).toBe("220");
+    expect(err.message).toMatch(/Authentication failed/);
+    expect(err.message).toMatch(/SG24_API_TOKEN/);
+  });
+
+  it("does not retry when retry is false", async () => {
+    const f = fakeFetch({ status: 503, body: "" });
+    await expect(client(f.fn).call({ command: "x" }, { retry: false })).rejects.toThrow("HTTP status 503");
+    expect(f.mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops retrying at the total deadline", async () => {
+    const hang = vi.fn(
+      (_url: string | URL | Request, init?: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        }),
+    );
+    const c = new Sg24Client("tok", {
+      fetch: hang as unknown as typeof fetch,
+      timeoutMs: 40,
+      totalMs: 100,
+      retries: 10,
+      retryDelayMs: 0,
+    });
+    const t0 = Date.now();
+    await expect(c.call({ command: "x" })).rejects.toThrow(/timed out/);
+    expect(Date.now() - t0).toBeLessThan(400);
+    expect(hang.mock.calls.length).toBeLessThanOrEqual(3);
+  });
+
+  it("defaults keep the worst case under the 60 s MCP client timeout", () => {
+    expect(new Sg24Client("tok").totalMs).toBeLessThanOrEqual(50_000);
   });
 
   it("redacts token in network errors", async () => {

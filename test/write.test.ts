@@ -69,14 +69,18 @@ describe("createDowntime", () => {
   it("creates and links checks", async () => {
     const s = stub({ dt_id: "5" }, []);
     const r = await createDowntime(s.client, cfg, { ...base, check_ids: [111] }, now);
-    expect(s.call).toHaveBeenNthCalledWith(1, {
-      command: "downtime_add",
-      hostname: "web.example.com",
-      starttime: 1795482000,
-      endtime: 1795485600,
-      description: "Deploy",
-      type: 1,
-    });
+    expect(s.call).toHaveBeenNthCalledWith(
+      1,
+      {
+        command: "downtime_add",
+        hostname: "web.example.com",
+        starttime: 1795482000,
+        endtime: 1795485600,
+        description: "Deploy",
+        type: 1,
+      },
+      { retry: false },
+    );
     expect(s.call).toHaveBeenNthCalledWith(2, { command: "downtime_link", id: "5", services: [111] });
     expect(s.call).toHaveBeenCalledTimes(2);
     expect(r.isError).toBeUndefined();
@@ -117,6 +121,10 @@ describe("createDowntime", () => {
     ["end equals start", { end: base.start }, /after the start/],
     ["too long", { end: "2026-11-25T02:00:00+01:00" }, /23:59:59/],
     ["in the past", { start: "2026-11-23T08:00:00Z", end: "2026-11-23T09:00:00Z" }, /past/],
+    ["already over", { start: "2026-11-23T09:10:00Z", end: "2026-11-23T09:50:00Z" }, /end.*past/i],
+    ["rollover day", { start: "2026-11-31T02:00:00Z", end: "2026-11-31T03:00:00Z" }, /valid/],
+    ["feb 30", { start: "2027-02-30T02:00:00Z", end: "2027-02-30T03:00:00Z" }, /valid/],
+    ["hour 24", { start: "2026-11-24T24:00:00Z", end: "2026-11-25T01:00:00Z" }, /valid/],
     ["empty hostname", { hostname: " " }, /hostname/],
     ["empty description", { description: "" }, /description/],
   ])("rejects %s before any API call", async (_name, patch, msg) => {
@@ -163,6 +171,15 @@ describe("createDowntime", () => {
     const r = await createDowntime(s.client, cfg, base, now);
     expect(r.isError).toBe(true);
     expect(r.content[0].text).toBe("API error 310: already exists");
+  });
+
+  it("reports an unknown result when downtime_add times out", async () => {
+    const s = stub(new Error("Request timed out after 30s"));
+    const r = await createDowntime(s.client, cfg, base, now);
+    expect(r.isError).toBe(true);
+    expect(r.content[0].text).toMatch(/unknown/i);
+    expect(r.content[0].text).toMatch(/sg24_list/);
+    expect(r.content[0].text).toMatch(/timed out/);
   });
 
   it("fails when the response has no dt_id", async () => {
