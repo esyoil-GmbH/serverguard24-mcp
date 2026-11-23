@@ -1,0 +1,74 @@
+{
+  "manifest_version": "0.3",
+  "name": "serverguard24",
+  "display_name": "ServerGuard24",
+  "version": "0.1.0",
+  "description": "ServerGuard24 monitoring: check status, what is down, pause/resume checks, maintenance windows",
+  "author": {
+    "name": "esyoil GmbH"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/dist/index.js"
+      ],
+      "env": {
+        "SG24_API_TOKEN": "${user_config.api_token}",
+        "SG24_CHECK_IDS": "${user_config.check_ids}"
+      }
+    }
+  },
+  "user_config": {
+    "api_token": {
+      "type": "string",
+      "title": "ServerGuard24 API token",
+      "description": "API token from the ServerGuard24 customer area",
+      "required": true,
+      "sensitive": true
+    },
+    "check_ids": {
+      "type": "string",
+      "title": "Check IDs",
+      "description": "Comma-separated check (service) IDs from the dashboard. The API cannot list checks.",
+      "required": false,
+      "default": ""
+    }
+  },
+  "tools": [
+    {
+      "name": "sg24_list_hosts",
+      "description": "List hosts"
+    },
+    {
+      "name": "sg24_list",
+      "description": "List contacts, groups, nodes, downtimes, distributors or integrations"
+    },
+    {
+      "name": "sg24_get_check",
+      "description": "Show details and state of one check"
+    },
+    {
+      "name": "sg24_list_checks",
+      "description": "Status of all configured checks"
+    },
+    {
+      "name": "sg24_problems",
+      "description": "Configured checks that are not OK"
+    },
+    {
+      "name": "sg24_set_check_monitoring",
+      "description": "Pause or resume a check"
+    },
+    {
+      "name": "sg24_set_check_notifications",
+      "description": "Turn check alerts on or off"
+    },
+    {
+      "name": "sg24_create_downtime",
+      "description": "Create a maintenance window (cannot be deleted via API)"
+    }
+  ]
+}

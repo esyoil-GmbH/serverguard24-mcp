@@ -1,0 +1,31 @@
+{
+  "name": "serverguard24-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the ServerGuard24 monitoring API (read + operational actions)",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "bin": {
+    "serverguard24-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "type-check": "tsc --noEmit",
+    "build:mcpb": "bash scripts/pack-mcpb.sh"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
