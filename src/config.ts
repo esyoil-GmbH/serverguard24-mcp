@@ -12,7 +12,7 @@ export function loadConfig(env: Record<string, string | undefined>): Config {
     if (value === "") continue;
     if (!/^\d+$/.test(value)) {
       throw new Error(
-        `SG24_CHECK_IDS contains "${value}", which is not a check ID. Use comma-separated numbers, e.g. 103245,103246.`,
+        `SG24_CHECK_IDS contains "${value}", which is not a check ID. Use comma-separated numbers, e.g. 123456,123457.`,
       );
     }
     const id = Number(value);

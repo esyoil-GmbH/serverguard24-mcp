@@ -12,7 +12,7 @@
     "build": "tsc",
     "test": "vitest run",
     "type-check": "tsc --noEmit",
-    "build:mcpb": "mcpb pack"
+    "build:mcpb": "bash scripts/pack-mcpb.sh"
   },
   "engines": {
     "node": ">=22"
